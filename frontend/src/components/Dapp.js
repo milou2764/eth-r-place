@@ -6,6 +6,7 @@ import { ethers } from "ethers";
 // We import the contract's artifacts and address here, as we are going to be
 // using them with ethers
 import TokenArtifact from "../contracts/Token.json";
+import PixelMapArtifact from "../contracts/PixelMap.json";
 import contractAddress from "../contracts/contract-address.json";
 
 // All the logic of this dapp is contained in the Dapp component.
@@ -15,6 +16,7 @@ import { NoWalletDetected } from "./NoWalletDetected";
 import { ConnectWallet } from "./ConnectWallet";
 import { Loading } from "./Loading";
 import { Transfer } from "./Transfer";
+import { PixelMap } from "./PixelMap";
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { NoTokensMessage } from "./NoTokensMessage";
@@ -155,6 +157,23 @@ export class Dapp extends React.Component {
                 tokenSymbol={this.state.tokenData.symbol}
               />
             )}
+
+            {/*
+              This component displays a form that the user can use to send a 
+              transaction and transfer some tokens.
+              The component doesn't have logic, it just calls the transferTokens
+              callback.
+            */}
+            {this.state.balance.gt(0) && (
+              <PixelMap
+                setPixel={(x, y, color) =>
+                  this._setPixel(x, y, color)
+                }
+                getPixels={() =>
+                  this._pixels()
+                }
+              />
+            )}
           </div>
         </div>
       </div>
@@ -232,6 +251,11 @@ export class Dapp extends React.Component {
     this._token = new ethers.Contract(
       contractAddress.Token,
       TokenArtifact.abi,
+      this._provider.getSigner(0)
+    );
+    this._pixelMap = new ethers.Contract(
+      contractAddress.PixelMap,
+      PixelMapArtifact.abi,
       this._provider.getSigner(0)
     );
   }
@@ -326,6 +350,42 @@ export class Dapp extends React.Component {
       // If we leave the try/catch, we aren't sending a tx anymore, so we clear
       // this part of the state.
       this.setState({ txBeingSent: undefined });
+    }
+  }
+
+  // This method change a pixel in the pixel map
+  async _setPixel(x, y, color) {
+
+    try {
+      // If a transaction fails, we save that error in the component's state.
+      // We only save one such error, so before sending a second transaction, we
+      // clear it.
+      this._dismissTransactionError();
+
+      await this._pixelMap.setPixel(x, y, color);
+      const pixels = await this._pixelMap.getAllPixels();
+      console.log(pixels);
+    } catch (error) {
+      // Other errors are logged and stored in the Dapp's state. This is used to
+      // show them to the user, and for debugging.
+      console.error(error);
+    }
+  }
+
+  // This method change a pixel in the pixel map
+  async _pixels() {
+
+    try {
+      // If a transaction fails, we save that error in the component's state.
+      // We only save one such error, so before sending a second transaction, we
+      // clear it.
+      this._dismissTransactionError();
+
+      return await this._pixelMap.getAllPixels();
+    } catch (error) {
+      // Other errors are logged and stored in the Dapp's state. This is used to
+      // show them to the user, and for debugging.
+      console.error(error);
     }
   }
 

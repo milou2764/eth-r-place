@@ -28,11 +28,17 @@ async function main() {
 
   console.log("Token address:", token.address);
 
+  const PixelMap = await ethers.getContractFactory("PixelMap");
+  const pixelMap = await PixelMap.deploy();
+  await pixelMap.deployed();
+
+  console.log("PixelMap address:", pixelMap.address);
+
   // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(token);
+  saveFrontendFiles(token, pixelMap);
 }
 
-function saveFrontendFiles(token) {
+function saveFrontendFiles(token, pixelMap) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "..", "frontend", "src", "contracts");
 
@@ -42,14 +48,19 @@ function saveFrontendFiles(token) {
 
   fs.writeFileSync(
     path.join(contractsDir, "contract-address.json"),
-    JSON.stringify({ Token: token.address }, undefined, 2)
+    JSON.stringify({ Token: token.address, PixelMap: pixelMap.address }, undefined, 2)
   );
 
   const TokenArtifact = artifacts.readArtifactSync("Token");
+  const PixelMapArtifact = artifacts.readArtifactSync("PixelMap");
 
   fs.writeFileSync(
     path.join(contractsDir, "Token.json"),
     JSON.stringify(TokenArtifact, null, 2)
+  );
+  fs.writeFileSync(
+    path.join(contractsDir, "PixelMap.json"),
+    JSON.stringify(PixelMapArtifact, null, 2)
   );
 }
 
